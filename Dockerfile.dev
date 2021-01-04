@@ -1,0 +1,16 @@
+# ở đây chúng ta tạo ra file Dockerfile.dev thay vì Dockerfile
+# do vậy để có thể build image sử dụng docker file custom name
+# sử dụng: "docker image build -f Dockerfile.dev ."
+# -f: là chỉ định 1 Dockerfile cụ thể có tên khác mặc đinh là Dockerfile
+
+FROM node:12-alpine
+
+WORKDIR "/app"
+
+COPY package.json .
+
+RUN npm install
+
+COPY . .
+
+CMD ["npm", "run", "start"]

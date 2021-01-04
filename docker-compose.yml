@@ -1,0 +1,26 @@
+# nội dung của docker-compose.yml này tương đương với
+# "docker run -p 3000:3000 -v /app/node_modules -v $(pwd):/app [image_name]"
+version: "3"
+services:
+  web:
+    build:
+      # "context ." sẽ chỉ định nơi mà chúng ta muốn pull những files và folders
+      # cho image này (web). Trong trường hợp này chúng ta muốn tất cả các files
+      # và folders cùng cấp với docker-compose.yml
+      context: .
+      # dockerfile chỉ định Dockerfile mà chúng ta sẽ sử dụng để xây dựng image
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - /app/node_modules
+      - .:/app
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - /app/node_modules
+      - .:/app
+    # "command: [...]" sẽ viết đè default command của container khi run service này
+    command: ["npm", "run", "test"]
