@@ -1,0 +1,56 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker image build -t stephengrider/docker-react -f Dockerfile.dev .
+
+script:
+  - docker run stephengrider/docker-react npm run test -- --coverage
+
+deploy:
+  # chỉ định provider sẽ sử dụng trên AWS
+  provider: elasticbeanstalk
+  # khu vực mà provider được tạo
+  region: "us-west-2"
+  # tên app trong provider
+  app: "docker"
+  # tên môi trường trong provider
+  env: "Docker-env"
+  # khi travis muốn deploy sản phẩm của bạn, nó sẽ lấy tất cả các file bên trong
+  # github repository mà bạn đã setup trên travis-ci.org sau đó nó sẽ zip chúng
+  # lại thành 1 single file duy nhất rồi sau đó nó sẽ copy file đó vào s3_bucket
+  # là 1 hard drive ở trên AWS, sau đó travis-ci sẽ trọc vào provider mà ta đã
+  # cấu hình ở trên rồi upload file lên đó.
+  # để biết được thông tin của s3_bucket bạn cần phải lên AWS tìm s3 để lấy được
+  # nó về trong trường hợp này của người hướng dẫn là
+  bucket_name: "elasticbeanstalk-us-west-2-306476627547"
+  # bucket_path là đường dẫn đến thư mục mà chúng ta sẽ deploy project vào, thư mục
+  # này mặc định sẽ được tạo ra khi chúng ta deploy lên s3_bucket, nó chính là tên của app
+  # mà chúng ta config ở trên
+  bucket_path: "docker"
+  # chỉ định bất cứ lúc nào merge code vào branch master thì mới deploy code
+  on:
+    branch: master
+  # để travis-ci có quyền deploy lên AWS thì ta cần cung cấp cho nó API key để chứng
+  # thực nó với AWS, để có những key này bạn phải lên AWS rồi tìm IAM rồi nhấn vào mục Users
+  # chúng ta sẽ tạo ra 1 user mới sử dụng cho travis-ci. Nhấn button Add user sau đó nhập tên,
+  # sau đó chọn Access type* là Programmatic access, sau đó click Next button, sau đó chọn
+  # "Attach existing policies directly", sau đó bạn sẽ nhìn thấy 1 list các policies ở phía dưới,
+  # về cơ bản thì chúng là permissions, chúng ta sẽ cấp permission cho new user mà chúng ta vừa tạo.
+  # Trong thực tế chúng ta muốn đảm bảo rằng new user có khả năng deploy app của chúng ta lên elasticbeanstalk
+  # bạn tìm elasticbeanstalk sẽ thấy có 1 vài policies đã được AWS generated sẵn cho chúng ta, bạn đọc
+  # phần "Description" của mỗi policy và chọn cái nào có full access, sau đó lick Next button và cuối cùng
+  # chọn Create user. Sau khi đã tạo xong user bạn sẽ nhìn thấy "Access key ID", "Secret access key",...
+  # chúng sử dụng để travis-ci deploy lên AWS
+  #
+  # NOTE: chú ý là "Secret access key" chỉ được show có 1 lần sau khi bạn tạo user thôi, do vậy cần copy nó ngay
+  # NOTE: đừng bao giờ copy những key đó vào ".travis.yml" file rồi đẩy nó lên github nhé, vì mọi người sẽ nhìn
+  # thấy những key đó, thay vào đó chúng ta sẽ sử dụng environment secrets được travis-ci cung cấp. Vào mục
+  # "More options" chọn "Settings" rồi tìm mục "Environment Variables", tất cả các environment variables ở đây
+  # sẽ được mã hóa nên người khác sẽ không nhìn thấy được
+  #
+  # $AWS_ACCESS_KEY và "$AWS_SECRET_KEY" là biến environment mà chúng ta đã config trên travis-ci
+  access_key_id: $AWS_ACCESS_KEY
+  secret_access_key:
+    secure: "$AWS_SECRET_KEY"
